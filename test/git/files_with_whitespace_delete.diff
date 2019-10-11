@@ -1,0 +1,7 @@
+diff --git a/old file has spaces b/old file has spaces
+index 7898192..7e8a165 100644
+--- a/old file has spaces
++++ /dev/null
+@@ -1 +1,2 @@
+ a
++a

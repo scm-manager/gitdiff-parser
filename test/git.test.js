@@ -40,4 +40,28 @@ describe("git specific tests", () => {
         expect(file.newPath).toBe("a.txt");
     });
 
+    it("should parse filenames with whitespace", () => {
+        const diff = parse("files_with_whitespace.diff");
+        const file = diff[0];
+        expect(file.type).toBe("modify");
+        expect(file.oldPath).toBe("old file has spaces");
+        expect(file.newPath).toBe("new file has spaces");
+    });
+
+    it("should parse added filename with whitespace", () => {
+        const diff = parse("files_with_whitespace_add.diff");
+        const file = diff[0];
+        expect(file.type).toBe("add");
+        expect(file.oldPath).toBe("/dev/null");
+        expect(file.newPath).toBe("new file has spaces");
+    });
+
+    it("should parse deleted filename with whitespace", () => {
+        const diff = parse("files_with_whitespace_delete.diff");
+        const file = diff[0];
+        expect(file.type).toBe("delete");
+        expect(file.oldPath).toBe("old file has spaces");
+        expect(file.newPath).toBe("/dev/null");
+    });
+
 });

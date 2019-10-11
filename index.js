@@ -125,13 +125,15 @@
                                 if (oldFileName.indexOf('---') === 0) {
                                     var newFileName = lines[i + 2];
 
+                                    currentInfo.oldPath = oldFileName.slice(6);
+                                    currentInfo.newPath = newFileName.slice(6);
                                     if (/\s\/dev\/null$/.test(oldFileName)) {
-                                        currentInfo.oldPath = '/dev/null';
                                         currentInfoType = 'add';
+                                        currentInfo.oldPath = '/dev/null';
                                     }
                                     else if (/\s\/dev\/null$/.test(newFileName)) {
-                                        currentInfo.newPath = '/dev/null';
                                         currentInfoType = 'delete';
+                                        currentInfo.newPath = '/dev/null';
                                     }
 
                                     i += 2;
