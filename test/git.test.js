@@ -64,4 +64,12 @@ describe("git specific tests", () => {
         expect(file.newPath).toBe("/dev/null");
     });
 
+    it("should parse binary files", () => {
+        const diff = parse("binary.diff");
+        const binary = diff[0];
+        expect(binary.type).toBe("add");
+        const next = diff[1];
+        expect(next.newPath).toBe("Main.java");
+    });
+
 });
