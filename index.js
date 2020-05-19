@@ -145,6 +145,10 @@
                             case 'deleted':
                                 break;
                             case 'copy':
+                                currentInfoType = 'copy'
+                                break;
+                            case 'rename':
+                                currentInfoType = 'rename'
                                 break;
                             case '---':
                                 var oldPath = segs[1];
@@ -152,7 +156,6 @@
                                     currentInfo.oldPath = '/dev/null';
                                     currentInfoType = 'add';
                                 } else {
-                                    currentInfoType = 'modify';
                                     currentInfo.oldPath = oldPath.slice(2);
                                 }
 
@@ -168,10 +171,6 @@
 
                                 stat = STAT_HUNK;
                                 break simiLoop;
-                        }
-
-                        if (!currentInfoType) {
-                            currentInfoType = segs[0];
                         }
                     }
 
