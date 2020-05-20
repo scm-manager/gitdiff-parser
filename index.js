@@ -125,24 +125,52 @@
                                 if (oldFileName.indexOf('---') === 0) {
                                     var newFileName = lines[i + 2];
 
+                                    currentInfo.oldPath = oldFileName.slice(6);
+                                    currentInfo.newPath = newFileName.slice(6);
                                     if (/\s\/dev\/null$/.test(oldFileName)) {
-                                        currentInfo.oldPath = '/dev/null';
                                         currentInfoType = 'add';
+                                        currentInfo.oldPath = '/dev/null';
                                     }
                                     else if (/\s\/dev\/null$/.test(newFileName)) {
-                                        currentInfo.newPath = '/dev/null';
                                         currentInfoType = 'delete';
+                                        currentInfo.newPath = '/dev/null';
                                     }
 
                                     i += 2;
                                 }
 
                                 break simiLoop;
+                            case 'new':
+                                break;
+                            case 'deleted':
+                                break;
+                            case 'copy':
+                                currentInfoType = 'copy'
+                                break;
+                            case 'rename':
+                                currentInfoType = 'rename'
+                                break;
+                            case '---':
+                                var oldPath = segs[1];
+                                if (/\s?\/dev\/null$/.test(oldPath)) {
+                                    currentInfo.oldPath = '/dev/null';
+                                    currentInfoType = 'add';
+                                } else {
+                                    currentInfo.oldPath = oldPath.slice(2);
+                                }
 
-                        }
+                                break;
+                            case '+++':
+                                var newPath = segs[1];
+                                if (/\s?\/dev\/null$/.test(newPath)) {
+                                    currentInfo.newPath = '/dev/null';
+                                    currentInfoType = 'delete';
+                                } else {
+                                    currentInfo.newPath = newPath.slice(2);
+                                }
 
-                        if (!currentInfoType) {
-                            currentInfoType = segs[0];
+                                stat = STAT_HUNK;
+                                break simiLoop;
                         }
                     }
 
@@ -150,11 +178,7 @@
                 }
                 else if (line.indexOf('Binary') === 0) {
                     currentInfo.isBinary = true;
-                    currentInfo.type = line.indexOf('/dev/null and') >= 0
-                        ? 'add'
-                        : (line.indexOf('and /dev/null') >= 0 ? 'delete' : 'modify');
                     stat = STAT_START;
-                    currentInfo = null;
                 }
                 else if (stat === STAT_HUNK) {
                     if (line.indexOf('@@') === 0) {
