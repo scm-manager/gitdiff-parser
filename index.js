@@ -141,8 +141,12 @@
 
                                 break simiLoop;
                             case 'new':
+                                currentInfo.oldPath = '/dev/null';
+                                currentInfoType = 'add'
                                 break;
                             case 'deleted':
+                                currentInfo.newPath = '/dev/null';
+                                currentInfoType = 'delete';
                                 break;
                             case 'copy':
                                 currentInfoType = 'copy'

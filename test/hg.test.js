@@ -16,6 +16,14 @@ describe("hg specific tests", () => {
         expect(file.newPath).toBe("a.txt");
     });
 
+    it("should have type add for empty file", () => {
+        const diff = parse("add_empty_file.diff");
+        const file = diff[0];
+        expect(file.type).toBe("add");
+        expect(file.oldPath).toBe("/dev/null");
+        expect(file.newPath).toBe("a.txt");
+    });
+
     it("should have type delete", () => {
         const diff = parse("rm.diff");
         const file = diff[0];
