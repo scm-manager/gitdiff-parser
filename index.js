@@ -61,13 +61,15 @@
                             case 'diff': // diff --git
                                 i--;
                                 break simiLoop;
-
                             case 'deleted':
                             case 'new':
                                 var leftStr = simiLine.slice(spaceIndex + 1);
                                 if (leftStr.indexOf('file mode') === 0) {
                                     currentInfo[infoType === 'new' ? 'newMode' : 'oldMode'] = leftStr.slice(10);
                                 }
+                                currentInfoType = 'add';
+                                currentInfo.oldPath = '/dev/null'
+                                currentInfo.newPath = lines[i - 1].slice(13).split(' ')[0];
                                 break;
 
                             case 'similarity':

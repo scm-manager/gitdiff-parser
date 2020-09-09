@@ -5,7 +5,7 @@ const parser = require('../index');
 describe("hg specific tests", () => {
 
     const parse = (filename) => {
-        return parser.parse( fs.readFileSync(path.resolve(__dirname, "hg", filename), 'utf-8') );
+        return parser.parse(fs.readFileSync(path.resolve(__dirname, "hg", filename), 'utf-8'));
     };
 
     it("should have type add", () => {
@@ -45,6 +45,14 @@ describe("hg specific tests", () => {
         const file = diff[0];
         expect(file.type).toBe("modify");
         expect(file.oldPath).toBe("a.txt");
+        expect(file.newPath).toBe("a.txt");
+    });
+
+    it("should have type add for empty file", () => {
+        const diff = parse("add_empty_file.diff");
+        const file = diff[0];
+        expect(file.type).toBe("add");
+        expect(file.oldPath).toBe("/dev/null");
         expect(file.newPath).toBe("a.txt");
     });
 
