@@ -9,8 +9,6 @@
     var STAT_HUNK = 5;
 
 
-
-
     var parser = {
         /**
          * 解析 gitdiff 消息
@@ -35,42 +33,8 @@
                 var line = lines[i];
 
                 if (line.indexOf('diff --git') === 0) {
-                    var filesStr = line.slice(11);
-                    var oldPath = null;
-                    var newPath = null;
-
-                    var quoteIndex = filesStr.indexOf('"');
-                    switch (quoteIndex) {
-                        case -1:
-                            var segs = filesStr.split(' ');
-                            oldPath = segs[0].slice(2);
-                            newPath = segs[1].slice(2);
-                            break;
-
-                        case 0:
-                            var nextQuoteIndex = filesStr.indexOf('"', 2);
-                            oldPath = filesStr.slice(3, nextQuoteIndex);
-                            var newQuoteIndex = filesStr.indexOf('"', nextQuoteIndex + 1);
-                            if (newQuoteIndex < 0) {
-                                newPath = filesStr.slice(nextQuoteIndex + 4);
-                            }
-                            else {
-                                newPath = filesStr.slice(newQuoteIndex + 3, -1);
-                            }
-                            break;
-
-                        default:
-                            var segs = filesStr.split(' ');
-                            oldPath = segs[0].slice(2);
-                            newPath = segs[1].slice(3, -1);
-                            break;
-                    }
-
-
                     // read file
                     currentInfo = {
-                        oldPath: oldPath,
-                        newPath: newPath,
                         hunks: [],
                         oldEndingNewLine: true,
                         newEndingNewLine: true
@@ -86,89 +50,73 @@
                     // 5. 其它情况是modify
                     var currentInfoType = null;
 
-                    // read mode change
-                    var nextLine = lines[i + 1];
-                    if (nextLine.indexOf('old') === 0) {
-                        currentInfo.oldMode = nextLine.slice(9, 16);
-                        currentInfo.newMode = lines[i + 2].slice(9, 16);
-                        i += 2;
-                        nextLine = lines[i + 1];
-                    }
 
-                    // read similarity
-                    if (nextLine.indexOf('similarity') === 0) {
-                        currentInfo.similarity = parseInt(nextLine.split(' ')[2], 10);
-                        i += 1;
-                    }
-
-                    // read similarity type and index
+                    // read type and index
                     var simiLine;
                     simiLoop: while ((simiLine = lines[++i])) {
-                        var segs = simiLine.split(' ');
+                        var spaceIndex = simiLine.indexOf(' ');
+                        var infoType = spaceIndex > -1 ? simiLine.slice(0, spaceIndex) : infoType;
 
-                        switch (segs[0]) {
+                        switch (infoType) {
                             case 'diff': // diff --git
                                 i--;
                                 break simiLoop;
 
+                            case 'deleted':
+                            case 'new':
+                                var leftStr = simiLine.slice(spaceIndex + 1);
+                                if (leftStr.indexOf('file mode') === 0) {
+                                    currentInfo[infoType === 'new' ? 'newMode' : 'oldMode'] = leftStr.slice(10);
+                                }
+                                break;
+
+                            case 'similarity':
+                                currentInfo.similarity = parseInt(simiLine.split(' ')[2], 10);
+                                break;
+
                             case 'index':
-                                var revs = segs[1].split('..');
+                                var segs = simiLine.slice(spaceIndex + 1).split(' ');
+                                var revs = segs[0].split('..');
                                 currentInfo.oldRevision = revs[0];
                                 currentInfo.newRevision = revs[1];
 
-                                if (segs[2]) {
-                                    currentInfo.oldMode = currentInfo.newMode = segs[2];
+                                if (segs[1]) {
+                                    currentInfo.oldMode = currentInfo.newMode = segs[1];
                                 }
-                                stat = STAT_HUNK;
-
-                                var oldFileName = lines[i + 1];
-                                if (oldFileName.indexOf('---') === 0) {
-                                    var newFileName = lines[i + 2];
-
-                                    currentInfo.oldPath = oldFileName.slice(6);
-                                    currentInfo.newPath = newFileName.slice(6);
-                                    if (/\s\/dev\/null$/.test(oldFileName)) {
-                                        currentInfoType = 'add';
-                                        currentInfo.oldPath = '/dev/null';
-                                    }
-                                    else if (/\s\/dev\/null$/.test(newFileName)) {
-                                        currentInfoType = 'delete';
-                                        currentInfo.newPath = '/dev/null';
-                                    }
-
-                                    i += 2;
-                                }
-
-                                break simiLoop;
-                            case 'new':
                                 break;
-                            case 'deleted':
-                                break;
+                            
+
                             case 'copy':
                                 currentInfoType = 'copy'
                                 break;
                             case 'rename':
-                                currentInfoType = 'rename'
-                                break;
-                            case '---':
-                                var oldPath = segs[1];
-                                if (/\s?\/dev\/null$/.test(oldPath)) {
-                                    currentInfo.oldPath = '/dev/null';
-                                    currentInfoType = 'add';
-                                } else {
-                                    currentInfo.oldPath = oldPath.slice(2);
+                                var infoStr = simiLine.slice(spaceIndex + 1);
+                                if (infoStr.indexOf('from') === 0) {
+                                    currentInfo.oldPath = infoStr.slice(5);
                                 }
-
+                                else { // rename to
+                                    currentInfo.newPath = infoStr.slice(3);
+                                }
+                                currentInfoType = infoType;
                                 break;
-                            case '+++':
-                                var newPath = segs[1];
-                                if (/\s?\/dev\/null$/.test(newPath)) {
-                                    currentInfo.newPath = '/dev/null';
+
+                            case '---':
+                                var oldPath = simiLine.slice(spaceIndex + 1);
+                                var newPath = lines[++i].slice(4); // next line must be "+++ xxx"
+                                if (oldPath === '/dev/null') {
+                                    newPath = newPath.slice(2);
+                                    currentInfoType = 'add';
+                                }
+                                else if (newPath === '/dev/null') {
+                                    oldPath = oldPath.slice(2);
                                     currentInfoType = 'delete';
                                 } else {
-                                    currentInfo.newPath = newPath.slice(2);
+                                    oldPath = oldPath.slice(2);
+                                    newPath = newPath.slice(2);
                                 }
 
+                                currentInfo.oldPath = oldPath;
+                                currentInfo.newPath = newPath;
                                 stat = STAT_HUNK;
                                 break simiLoop;
                         }
