@@ -1,6 +1,6 @@
 # gitdiff-parser
 
-A fast and reliable git diff parser.
+A fast and reliable *git diff* parser.
 
 ## Install
 
